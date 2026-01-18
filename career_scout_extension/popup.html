@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>🚀 Career Scout</h2>
+    
+    <div id="settings-view" class="hidden">
+      <label>Google Gemini API Key</label>
+      <input type="password" id="api-key" placeholder="Paste AIza... key here">
+      
+      <label>Your Resume Text</label>
+      <textarea id="resume-text" placeholder="Paste your full resume text here..."></textarea>
+      
+      <button id="save-settings">Save & Close</button>
+    </div>
+
+    <div id="main-view">
+      <div id="score-box" class="hidden">
+        <div class="score-circle">
+          <span id="match-score">--</span>%
+        </div>
+        <p id="match-verdict">Ready to Scan</p>
+      </div>
+
+      <div id="loading" class="hidden">Thinking...</div>
+      
+      <button id="scan-btn">🎯 Scan This Job</button>
+      <button id="open-settings" class="secondary">⚙️ Settings</button>
+      
+      <div id="results" class="hidden">
+        <h3>Missing Keywords:</h3>
+        <ul id="missing-list"></ul>
+      </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
