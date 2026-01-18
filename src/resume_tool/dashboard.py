@@ -263,16 +263,7 @@ def main_app():
                     st.session_state.update({'form_name':d['name'], 'form_email':d['email'], 'form_phone':d['phone'], 'form_link':d['linkedin'], 'form_summary':d['summary'], 'form_exp':d['experience'], 'form_skills':d['skills'], 'form_references':d['references']})
                     st.rerun()
 
-        with st.form("resume"):
-            c1, c2 = st.columns(2)
-            name = c1.text_input("Name", value=st.session_state.get('form_name',''))
-            email = c1.text_input("Email", value=st.session_state.get('form_email',''))
-            phone = c2.text_input("Phone", value=st.session_state.get('form_phone',''))
-            link = c2.text_input("Link", value=st.session_state.get('form_link',''))
-            summ = st.text_area("Professional Summary", value=st.session_state.get('form_summary',''))
-            
-            st.markdown("---")
-            st.markdown("### 💼 Experience")
+        with st.expander("✨ AI Bullet Point Magic Rewrite", expanded=False):
             col_exp, col_ai = st.columns([3, 1])
             exp_input = col_exp.text_area("Draft a Bullet Point (e.g. 'I managed a team')", height=80, key="raw_bullet")
             
@@ -283,6 +274,18 @@ def main_app():
                         st.info(f"**Suggestion:**\n{improved}")
                 else:
                     st.error("Type something first!")
+
+        with st.form("resume"):
+            c1, c2 = st.columns(2)
+            name = c1.text_input("Name", value=st.session_state.get('form_name',''))
+            email = c1.text_input("Email", value=st.session_state.get('form_email',''))
+            phone = c2.text_input("Phone", value=st.session_state.get('form_phone',''))
+            link = c2.text_input("Link", value=st.session_state.get('form_link',''))
+            summ = st.text_area("Professional Summary", value=st.session_state.get('form_summary',''))
+            
+            st.markdown("---")
+            st.markdown("### 💼 Experience")
+            # Removed nested button section from here
 
             exp = st.text_area("Final Experience Section (Paste optimized bullets here)", height=250, value=st.session_state.get('form_exp',''))
             
