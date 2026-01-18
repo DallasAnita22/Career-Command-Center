@@ -97,10 +97,7 @@ def local_css():
 if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 if 'user_id' not in st.session_state: st.session_state['user_id'] = None
 if 'username' not in st.session_state: st.session_state['username'] = None
-
-# FIX 1: RESTORE SECRETS LOADING
-if 'gemini_key' not in st.session_state: st.session_state['gemini_key'] = st.secrets.get("GEMINI_API_KEY", "")
-
+if 'gemini_key' not in st.session_state: st.session_state['gemini_key'] = ""
 if 'pdf_bytes' not in st.session_state: st.session_state['pdf_bytes'] = None
 if 'docx_bytes' not in st.session_state: st.session_state['docx_bytes'] = None
 if 'resume_name' not in st.session_state: st.session_state['resume_name'] = "My_Resume"
@@ -157,6 +154,7 @@ def main_app():
     with st.sidebar:
         st.title(f"👤 {st.session_state['username']}")
         
+        # AI SETTINGS
         with st.expander("🔑 AI Settings", expanded=True):
             api_input = st.text_input("Google Gemini API Key", type="password", value=st.session_state['gemini_key'])
             if api_input:
@@ -167,13 +165,22 @@ def main_app():
         
         ai = AIService(st.session_state['gemini_key'])
 
-        if st.button("Logout"): st.session_state['logged_in'] = False; st.rerun()
+        st.divider()
+
+        # FEEDBACK BUTTON (NEW!)
+        st.markdown("### 📢 Beta Feedback")
+        st.caption("Found a bug? Have an idea?")
+        # REPLACE THIS URL WITH YOUR ACTUAL GOOGLE FORM LINK
+        st.link_button("🐛 Report a Bug", "https://docs.google.com/forms/d/e/1FAIpQLScKoStyO1aLznpUiIAWepq2nEBY3rE1V2rSZ_3P_ZKb-dzLDA/viewform?usp=publish-editor", use_container_width=True)
+
         st.divider()
         
         roles = ["Retail & Customer Service", "Admin & HR", "Tech", "General"]
         saved = st.session_state.get('saved_role', 'General')
         idx = roles.index(saved) if saved in roles else 3
         role = st.selectbox("Target Role", roles, index=idx)
+
+        if st.button("Logout"): st.session_state['logged_in'] = False; st.rerun()
 
     st.markdown("## 🚀 Career Command Center")
     
@@ -256,20 +263,6 @@ def main_app():
                     st.session_state.update({'form_name':d['name'], 'form_email':d['email'], 'form_phone':d['phone'], 'form_link':d['linkedin'], 'form_summary':d['summary'], 'form_exp':d['experience'], 'form_skills':d['skills'], 'form_references':d['references']})
                     st.rerun()
 
-        # FIX 2: MOVED MAGIC REWRITE OUTSIDE FORM TO PREVENT CRASH
-        with st.expander("✨ AI Magic Rewrite Tool (Expand to use)", expanded=False):
-            st.caption("Enter a basic bullet point (e.g. 'I managed a team') and let AI make it professional.")
-            c_input, c_btn = st.columns([4, 1])
-            draft_bullet = c_input.text_input("Draft Bullet", key="draft_bullet_input")
-            
-            if c_btn.button("✨ Rewrite", help="Use AI to make this professional"):
-                if draft_bullet:
-                    with st.spinner("Optimizing..."):
-                        improved = ai.magic_rewrite(draft_bullet, role)
-                        st.info(f"**Suggestion:**\n{improved}")
-                else:
-                    st.error("Type something first!")
-
         with st.form("resume"):
             c1, c2 = st.columns(2)
             name = c1.text_input("Name", value=st.session_state.get('form_name',''))
@@ -280,8 +273,18 @@ def main_app():
             
             st.markdown("---")
             st.markdown("### 💼 Experience")
+            col_exp, col_ai = st.columns([3, 1])
+            exp_input = col_exp.text_area("Draft a Bullet Point (e.g. 'I managed a team')", height=80, key="raw_bullet")
             
-            exp = st.text_area("Experience (Paste optimized bullets here)", height=250, value=st.session_state.get('form_exp',''))
+            if col_ai.button("✨ Magic Rewrite", help="Use AI to make this professional"):
+                if exp_input:
+                    with st.spinner("Optimizing..."):
+                        improved = ai.magic_rewrite(exp_input, role)
+                        st.info(f"**Suggestion:**\n{improved}")
+                else:
+                    st.error("Type something first!")
+
+            exp = st.text_area("Final Experience Section (Paste optimized bullets here)", height=250, value=st.session_state.get('form_exp',''))
             
             st.markdown("---")
             c3, c4 = st.columns(2)
