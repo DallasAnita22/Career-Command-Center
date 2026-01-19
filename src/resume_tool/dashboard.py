@@ -1,11 +1,10 @@
 import streamlit as st
 import sys
 import os
-import time
 from services.ai_service import AIService
 from services.file_handlers import generate_pdf, generate_docx
 from services.expert_knowledge import get_career_paths, get_coach_advice
-from services.auth import login_user, create_user, save_user_draft
+from services.auth import login_user, create_user
 from database import SessionLocal, engine
 from models import Base
 
@@ -14,11 +13,11 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 Base.metadata.create_all(bind=engine)
 st.set_page_config(page_title="Career Command Center", page_icon="🚀", layout="wide", initial_sidebar_state="expanded")
 
-# --- CSS FOR SPLIT SCREEN ---
+# --- CSS ---
 def local_css():
     st.markdown("""
     <style>
-        .main-header { font-size: 2.5rem; color: #4CAF50; text-align: center; font-weight: 700; }
+        .main-header { font-size: 2.5rem; color: #4CAF50; text-align: center; font-weight: 700; margin-bottom: 0px; }
         .coach-box { 
             background-color: #262730; 
             padding: 20px; 
@@ -28,13 +27,16 @@ def local_css():
         }
         .coach-title { color: #FFC107; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; }
         .stTextArea textarea { font-family: 'Courier New', monospace; }
-        .floating-button { margin-top: 10px; }
+        /* Tab Styling */
+        .stTabs [data-baseweb="tab-list"] { gap: 10px; }
+        .stTabs [data-baseweb="tab"] { background-color: #2b2b2b; border-radius: 10px 10px 0 0; color: white; }
+        .stTabs [aria-selected="true"] { background-color: #4CAF50; color: white; }
     </style>
     """, unsafe_allow_html=True)
 
 if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 if 'gemini_key' not in st.session_state: st.session_state['gemini_key'] = ""
-if 'coach_feedback' not in st.session_state: st.session_state['coach_feedback'] = "👋 I'm ready to review your work! Paste your resume on the left and click 'Analyze'."
+if 'coach_feedback' not in st.session_state: st.session_state['coach_feedback'] = "👋 I'm ready to review your work! Paste your resume on the left, the job description on the right, and click 'Analyze'."
 
 def get_db(): return SessionLocal()
 
@@ -71,105 +73,118 @@ def main_app():
     # --- SIDEBAR ---
     with st.sidebar:
         st.title(f"👤 {st.session_state['username']}")
+        
+        # API KEY INPUT
         with st.expander("🔑 AI Access Key", expanded=True):
             key = st.text_input("Gemini API Key", type="password", value=st.session_state['gemini_key'])
-            if key: st.session_state['gemini_key'] = key
+            if key: 
+                st.session_state['gemini_key'] = key
+                st.caption("✅ Key Saved")
+            else:
+                st.error("❌ No Key Found")
         
         st.divider()
         st.markdown("### 🎯 Your Target")
         
-        # NEW TOP 20 CAREER PATHS
+        # CAREER PATHS
         role = st.selectbox("Industry / Path", get_career_paths(), index=0)
-        
-        # DYNAMIC COACH ADVICE IN SIDEBAR
         advice = get_coach_advice(role)
         st.info(f"**Coach's Tip for {role}:**\n\n{advice['tip']}\n\n_{advice['book_ref']}_")
 
+        # LOGOUT
         if st.button("Logout"): st.session_state['logged_in'] = False; st.rerun()
 
-    # --- TOP NAV ---
+    # --- MAIN CONTENT ---
     st.markdown("<div class='main-header'>🚀 Career Command Center</div>", unsafe_allow_html=True)
     
-    # --- SPLIT SCREEN LAYOUT ---
-    col_editor, col_coach = st.columns([1.2, 1])
+    # RESTORED TABS: WORKSPACE vs USER GUIDE
+    tab_work, tab_guide = st.tabs(["🛠️ Workspace", "📚 User Guide"])
     
-    # === LEFT COLUMN: THE WORKBENCH ===
-    with col_editor:
-        st.subheader("📝 Resume Editor")
-        with st.form("resume_form"):
-            name = st.text_input("Full Name")
-            contact = st.text_input("Contact Info (Phone | Email | LinkedIn)")
-            summary = st.text_area("Professional Summary", height=100, help="The 7-Second Hook")
-            
-            st.markdown("### Experience")
-            experience = st.text_area("Work History (Paste bullets here)", height=300)
-            
-            skills = st.text_area("Skills & Tech Stack", height=100)
-            
-            # ACTION BUTTONS
-            c_btn1, c_btn2 = st.columns(2)
-            save = c_btn1.form_submit_button("💾 Save Progress", use_container_width=True)
-            analyze = c_btn2.form_submit_button("🔍 Analyze with Coach", use_container_width=True)
-            
-            if save:
-                st.success("Draft Saved!")
-                # (Add save logic here similar to previous version)
-    
-    # === RIGHT COLUMN: THE AI COACH ===
-    with col_coach:
-        st.subheader("🤖 Live Coach Feedback")
+    # === TAB 1: THE UNIFIED WORKSPACE ===
+    with tab_work:
+        col_editor, col_coach = st.columns([1.2, 1])
         
-        # 1. JOB DESCRIPTION INPUT
-        jd = st.text_area("Paste Job Description Here (for targeting)", height=150, placeholder="Paste the job posting you want to apply for...")
-        
-        # 2. COACH FEEDBACK BOX
-        st.markdown(f"""
-        <div class="coach-box">
-            <div class="coach-title">💬 AI Analysis</div>
-            {st.session_state['coach_feedback']}
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # AI LOGIC
-        if analyze:
-            ai = AIService(st.session_state['gemini_key'])
-            if not jd:
-                st.warning("⚠️ Paste a Job Description above so I can compare!")
-            elif not experience:
-                st.warning("⚠️ Your resume is empty.")
-            else:
-                with st.spinner("Analyzing against 2026 Industry Standards..."):
-                    # We ask AI to compare Resume vs JD
-                    prompt = f"""
-                    Act as a tough Career Coach for a candidate in {role}.
-                    
-                    RESUME EXPERIENCE:
-                    {experience}
-                    
-                    JOB DESCRIPTION:
-                    {jd}
-                    
-                    TASK:
-                    1. Give a Match Score (0-100%).
-                    2. List 3 Missing Keywords.
-                    3. Rewrite ONE bullet point from the resume to better match the job.
-                    
-                    Format: Use bolding and emojis. Keep it encouraging but direct.
-                    """
-                    try:
-                        # Call AI (Using the new client if updated, or old one)
-                        # Adapting to your current AI Service structure
-                        response = ai.client.models.generate_content(model='gemini-2.0-flash', contents=prompt)
-                        st.session_state['coach_feedback'] = response.text
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"AI Error: {e}")
+        # LEFT: EDITOR
+        with col_editor:
+            st.subheader("📝 Resume Editor")
+            with st.form("resume_form"):
+                name = st.text_input("Full Name")
+                contact = st.text_input("Contact Info")
+                summary = st.text_area("Professional Summary", height=100)
+                st.markdown("### Experience")
+                experience = st.text_area("Work History (Paste bullets)", height=300)
+                skills = st.text_area("Skills", height=100)
+                
+                c_btn1, c_btn2 = st.columns(2)
+                save = c_btn1.form_submit_button("💾 Save Progress", use_container_width=True)
+                analyze = c_btn2.form_submit_button("🔍 Analyze with Coach", use_container_width=True)
+                
+                if save: st.success("Draft Saved! (Note: Cloud resets daily)")
 
-    # --- DOWNLOADS ---
-    st.divider()
-    d1, d2 = st.columns(2)
-    d1.button("📄 Download PDF (Final)", use_container_width=True)
-    d2.button("� Download Word Doc (Editable)", use_container_width=True)
+        # RIGHT: AI COACH
+        with col_coach:
+            st.subheader("🤖 Live Coach Feedback")
+            jd = st.text_area("Paste Job Description (Target)", height=150)
+            
+            st.markdown(f"""<div class="coach-box"><div class="coach-title">💬 AI Analysis</div>{st.session_state['coach_feedback']}</div>""", unsafe_allow_html=True)
+            
+            # AI LOGIC
+            if analyze:
+                if not st.session_state['gemini_key']:
+                    st.error("❌ You must enter your API Key in the Sidebar first!")
+                elif not jd or not experience:
+                    st.warning("⚠️ I need both your Resume and the Job Description to compare.")
+                else:
+                    try:
+                        with st.spinner("Coach is analyzing..."):
+                            ai = AIService(st.session_state['gemini_key'])
+                            
+                            prompt = f"""
+                            Act as a Career Coach for a {role}.
+                            RESUME: {experience}
+                            JOB: {jd}
+                            
+                            Provide:
+                            1. Match Score (0-100%)
+                            2. 3 Missing Keywords
+                            3. Rewrite ONE bullet point to match the job.
+                            """
+                            
+                            # UPDATED AI CALL FOR 2026 LIBRARY
+                            if ai.client:
+                                response = ai.client.models.generate_content(
+                                    model='gemini-2.0-flash', 
+                                    contents=prompt
+                                )
+                                st.session_state['coach_feedback'] = response.text
+                                st.rerun()
+                            else:
+                                st.error("❌ API Client failed to initialize. Check your Key.")
+                    except Exception as e:
+                        st.error(f"AI Error: {str(e)}")
+                        st.caption("Tip: Did you update requirements.txt to use google-genai?")
+
+    # === TAB 2: USER GUIDE (RESTORED) ===
+    with tab_guide:
+        st.markdown("""
+        # 🎓 User Guide & Troubleshooting
+        
+        ### 1. 🔑 How to fix "AI Key Not Working"
+        * **Get a Key:** Go to [Google AI Studio](https://aistudio.google.com/app/apikey) and create a free key.
+        * **Paste it:** Put it in the sidebar box labeled "AI Access Key".
+        * **Error "404" or "Model Not Found"?** This means the system is outdated. Make sure you updated `requirements.txt` to include `google-genai`.
+        
+        ### 2. 🛠️ How to use the Workspace
+        * **Left Side (Editor):** This is where you work. Type your resume details here.
+        * **Right Side (Coach):** This is your guide.
+            1. Paste the **Job Description** you are applying for in the top box.
+            2. Click **Analyze**.
+            3. The AI will tell you exactly what keywords you are missing.
+        
+        ### 3. 💾 Saving Data
+        * **Important:** If you are using the Beta/Cloud version, your data **will disappear** if you close the tab.
+        * **Always** click the "Download PDF" button (coming soon to this tab) before you leave!
+        """)
 
 if st.session_state['logged_in']: main_app()
 else: login_page()
