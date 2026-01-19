@@ -27,6 +27,13 @@ def local_css():
         }
         .coach-title { color: #FFC107; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; }
         .stTextArea textarea { font-family: 'Courier New', monospace; }
+        
+        /* GUIDE STYLES */
+        .guide-header { color: #4CAF50; font-size: 1.5rem; font-weight: bold; margin-top: 20px; }
+        .score-red { color: #FF5252; font-weight: bold; }
+        .score-yellow { color: #FFC107; font-weight: bold; }
+        .score-green { color: #4CAF50; font-weight: bold; }
+        
         /* Tab Styling */
         .stTabs [data-baseweb="tab-list"] { gap: 10px; }
         .stTabs [data-baseweb="tab"] { background-color: #2b2b2b; border-radius: 10px 10px 0 0; color: white; }
@@ -90,15 +97,16 @@ def main_app():
         role = st.selectbox("Industry / Path", get_career_paths(), index=0)
         advice = get_coach_advice(role)
         st.info(f"**Coach's Tip for {role}:**\n\n{advice['tip']}\n\n_{advice['book_ref']}_")
+        
+        # LINK TO BUG FORM
+        st.link_button("🐛 Report a Bug", "https://forms.google.com/your-form-link-here", use_container_width=True)
 
-        # LOGOUT
         if st.button("Logout"): st.session_state['logged_in'] = False; st.rerun()
 
     # --- MAIN CONTENT ---
     st.markdown("<div class='main-header'>🚀 Career Command Center</div>", unsafe_allow_html=True)
     
-    # RESTORED TABS: WORKSPACE vs USER GUIDE
-    tab_work, tab_guide = st.tabs(["🛠️ Workspace", "📚 User Guide"])
+    tab_work, tab_guide = st.tabs(["🛠️ Workspace", "📚 detailed User Guide"])
     
     # === TAB 1: THE UNIFIED WORKSPACE ===
     with tab_work:
@@ -119,7 +127,7 @@ def main_app():
                 save = c_btn1.form_submit_button("💾 Save Progress", use_container_width=True)
                 analyze = c_btn2.form_submit_button("🔍 Analyze with Coach", use_container_width=True)
                 
-                if save: st.success("Draft Saved! (Note: Cloud resets daily)")
+                if save: st.success("Draft Saved!")
 
         # RIGHT: AI COACH
         with col_coach:
@@ -148,9 +156,10 @@ def main_app():
                             1. Match Score (0-100%)
                             2. 3 Missing Keywords
                             3. Rewrite ONE bullet point to match the job.
+                            
+                            Format: Use Markdown. Be encouraging but critical.
                             """
                             
-                            # UPDATED AI CALL FOR 2026 LIBRARY
                             if ai.client:
                                 response = ai.client.models.generate_content(
                                     model='gemini-2.0-flash', 
@@ -159,32 +168,66 @@ def main_app():
                                 st.session_state['coach_feedback'] = response.text
                                 st.rerun()
                             else:
-                                st.error("❌ API Client failed to initialize. Check your Key.")
+                                st.error("❌ Client failed. Check Key.")
                     except Exception as e:
                         st.error(f"AI Error: {str(e)}")
-                        st.caption("Tip: Did you update requirements.txt to use google-genai?")
 
-    # === TAB 2: USER GUIDE (RESTORED) ===
+    # === TAB 2: DETAILED USER GUIDE ===
     with tab_guide:
-        st.markdown("""
-        # 🎓 User Guide & Troubleshooting
+        st.markdown("# 🎓 How to Read Your Results")
+        st.markdown("Understanding the Coach's feedback is the key to getting hired. Here is how to interpret the data.")
         
-        ### 1. 🔑 How to fix "AI Key Not Working"
-        * **Get a Key:** Go to [Google AI Studio](https://aistudio.google.com/app/apikey) and create a free key.
-        * **Paste it:** Put it in the sidebar box labeled "AI Access Key".
-        * **Error "404" or "Model Not Found"?** This means the system is outdated. Make sure you updated `requirements.txt` to include `google-genai`.
         
-        ### 2. 🛠️ How to use the Workspace
-        * **Left Side (Editor):** This is where you work. Type your resume details here.
-        * **Right Side (Coach):** This is your guide.
-            1. Paste the **Job Description** you are applying for in the top box.
-            2. Click **Analyze**.
-            3. The AI will tell you exactly what keywords you are missing.
-        
-        ### 3. 💾 Saving Data
-        * **Important:** If you are using the Beta/Cloud version, your data **will disappear** if you close the tab.
-        * **Always** click the "Download PDF" button (coming soon to this tab) before you leave!
-        """)
+
+        with st.expander("📊 1. Understanding the Match Score", expanded=True):
+            st.markdown("""
+            The AI mimics an **ATS (Applicant Tracking System)**. It compares your resume text against the Job Description text.
+            
+            * <span class="score-red">0% - 40% (Critical Mismatch):</span>
+                * **What it means:** The robot thinks you are applying for the wrong job.
+                * **The Fix:** You are likely missing the "Hard Skills" (e.g., Python, Forklift, CPR). Look at the specific tools mentioned in the job post and add them to your **Skills** section.
+            
+            * <span class="score-yellow">41% - 75% (Good Context, Wrong Words):</span>
+                * **What it means:** You have the experience, but you are using different language than the company.
+                * **The Fix:** Synonym Swap. If they say "Client Success" and you say "Customer Service," **change your words to match theirs.**
+            
+            * <span class="score-green">76% - 100% (Interview Ready):</span>
+                * **What it means:** You are a perfect paper match. Apply immediately.
+            """, unsafe_allow_html=True)
+            
+        with st.expander("🔑 2. How to Handle 'Missing Keywords'"):
+            st.markdown("""
+            The Coach will list 3-5 words that are in the Job Description but NOT in your resume.
+            
+            **Where do I put them?**
+            1.  **If it's a Hard Skill (e.g., 'React', 'Excel'):** Add it to your **Skills Section** at the bottom.
+            2.  **If it's a Soft Skill (e.g., 'Leadership', 'Collaboration'):** Do NOT just list it. Weave it into a bullet point.
+                * *Bad:* "Skills: Leadership."
+                * *Good:* "Demonstrated **leadership** by guiding a team of 5..."
+            """)
+            
+        with st.expander("🛠️ 3. Workflow Strategy"):
+            st.markdown("""
+            **The 'Ping-Pong' Method:**
+            1.  Paste the **Job Description** on the Right.
+            2.  Click **Analyze**.
+            3.  Read the **Missing Keywords**.
+            4.  Go to the **Left Editor** and add those specific keywords.
+            5.  Click **Analyze** again.
+            6.  Repeat until your score turns **Green**.
+            """)
+            
+        with st.expander("🚀 4. Using Career Paths (Sidebar)"):
+            st.markdown("""
+            Changing the **"Industry / Path"** dropdown in the sidebar changes the AI's personality.
+            
+            * **General:** Good for office jobs. Focuses on clarity.
+            * **Tech:** Focuses on languages (Java, Python) and projects.
+            * **Trades:** Focuses on safety, certifications, and reliability.
+            * **First-Time:** Focuses on potential, attitude, and transferable habits (punctuality, learning).
+            
+            *Tip: If you are pivoting careers, select the career you WANT, not the one you HAVE.*
+            """)
 
 if st.session_state['logged_in']: main_app()
 else: login_page()
