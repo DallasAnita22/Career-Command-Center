@@ -1,30 +1,64 @@
-HARD_SKILLS = {"python", "java", "sql", "aws", "azure", "docker", "kubernetes", "react", "html", "css", "javascript", "excel", "salesforce", "sap", "linux", "scrum", "agile", "machine learning", "ai", "pandas"}
-SOFT_SKILLS = {"communication", "leadership", "collaboration", "problem-solving", "adaptability", "organization", "creativity", "negotiation", "mentoring"}
-ACTION_VERBS = {"managed", "led", "developed", "created", "executed", "analyzed", "improved", "generated", "spearheaded"}
+# src/resume_tool/services/expert_knowledge.py
 
-def classify_keyword(word):
-    word = word.lower()
-    if word in HARD_SKILLS: return "HARD_SKILL"
-    if word in SOFT_SKILLS: return "SOFT_SKILL"
-    if word in ACTION_VERBS: return "ACTION_VERB"
-    return "GENERAL"
+def get_career_paths():
+    """Returns the Top 20 Career Paths for 2026 + Special Categories."""
+    return [
+        "General / Undecided",
+        "--- ENTRY LEVEL & RETURNING ---",
+        "First-Time Workforce (High School/Grad)",
+        "Returning to Work (Parent/Caregiver)",
+        "Career Pivot / Transition",
+        "--- TECHNOLOGY & DATA ---",
+        "Software Development & AI",
+        "Cybersecurity & IT Support",
+        "Data Analytics & Science",
+        "--- HEALTHCARE ---",
+        "Nursing & Patient Care",
+        "Medical Administration & Billing",
+        "Home Health & Personal Care",
+        "--- TRADES & HANDS-ON ---",
+        "Green Tech (Solar/Wind)",
+        "Skilled Trades (Electrician/HVAC)",
+        "Logistics & Supply Chain",
+        "--- BUSINESS & SERVICE ---",
+        "Digital Marketing & E-Commerce",
+        "Project Management",
+        "Customer Success & Sales",
+        "Human Resources & Recruiting",
+        "Finance & Accounting"
+    ]
 
-def get_usage_tip(word, category):
-    if category == "HARD_SKILL": return f"👉 Action: Add '{word}' to Skills or: 'Leveraged **{word}** to optimize...'"
-    if category == "SOFT_SKILL": return f"👉 Action: Prove it: 'Demonstrated **{word}** by coordinating...'"
-    return f"👉 Action: Ensure '{word}' appears in your summary."
-
-EXPERT_INSIGHTS = {
-    "General": {"tips": ["⚠️ Avoid 'Responsible for'. Use 'Orchestrated'.", "💡 Google Recruiters like: 'Accomplished [X] as measured by [Y]'."]},
-    "Tech": {"keywords": ["software", "developer", "data"], "tips": ["⚠️ GitHub is mandatory. Pin top 3 repos.", "💡 Explain WHY you chose a tool."]},
-    "Retail & Customer Service": {"keywords": ["retail", "customer"], "tips": ["⚠️ Highlight conflict resolution.", "💡 Quantify: 'Handled 50+ transactions daily'."]}
-}
-
-def get_smart_tip(user_role):
-    import random
-    cat = "General"
-    for k, v in EXPERT_INSIGHTS.items():
-        if "keywords" in v and any(kw in user_role.lower() for kw in v["keywords"]):
-            cat = k
-            break
-    return cat, random.choice(EXPERT_INSIGHTS[cat]["tips"])
+def get_coach_advice(role):
+    """
+    Returns coaching tips based on principles from 'The 2-Hour Job Search' 
+    and 'The 7 Second CV'.
+    """
+    advice = {
+        "First-Time Workforce (High School/Grad)": {
+            "focus": "Transferable Skills",
+            "tip": "Since you lack history, focus on **Attributes**. Use examples from sports, volunteering, or school projects. Prove you are reliable and eager to learn.",
+            "book_ref": "💡 *Strategy:* Focus on 'Micro-Internships' and project work."
+        },
+        "Returning to Work (Parent/Caregiver)": {
+            "focus": "Gap Management",
+            "tip": "Don't hide the gap. Use a 'Functional Resume' style. Highlight the organizing, budgeting, and scheduling skills you used during your time away.",
+            "book_ref": "💡 *The 2-Hour Job Search:* Networking is 3x more effective for you than applying online."
+        },
+        "Software Development & AI": {
+            "focus": "Portfolio & GitHub",
+            "tip": "List your 'Tech Stack' (Python, SQL, React) at the very top. Recruiters scan for these keywords first.",
+            "book_ref": "💡 *The 7 Second CV:* If they don't see the language they need in 7 seconds, they move on."
+        },
+        "Green Tech (Solar/Wind)": {
+            "focus": "Certifications & Safety",
+            "tip": "Highlight any OSHA certifications or physical endurance experiences. This is a field that values reliability and safety above all.",
+            "book_ref": "💡 *Trend 2026:* This is the fastest-growing sector for entry-level work."
+        }
+    }
+    
+    # Default Advice
+    return advice.get(role, {
+        "focus": "Results over Duties",
+        "tip": "Don't just say what you did. Say what you *achieved*. Did you save time? Save money? Make a customer happy?",
+        "book_ref": "💡 *Rule:* Every bullet point should have a Number (%, $, or count)."
+    })
