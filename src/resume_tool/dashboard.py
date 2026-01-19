@@ -289,7 +289,7 @@ def main_app():
         def save_p(uid, t, s, tk, a, r): 
             db=get_db(); db.add(PortfolioProject(user_id=uid, title=t, industry=role, situation=s, task=tk, action=a, result=r)); db.commit(); db.close()
         def get_p(uid): 
-            db=get_db(); p=db.query(PortfolioProject).filter(PortfolioProject.user_id=uid).all(); db.close(); return p
+            db=get_db(); p=db.query(PortfolioProject).filter(PortfolioProject.user_id==uid).all(); db.close(); return p
             
         c1, c2 = st.columns([1, 1.5])
         with c1.form("port_form"):
