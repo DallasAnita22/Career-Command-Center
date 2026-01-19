@@ -204,7 +204,7 @@ def main_app():
                         with st.spinner("Coach is reading..."):
                             prompt = f"Act as a Coach for {role}. Resume: {current_text}. Job: {jd_live}. Give 1 Match Score, 3 Missing Keywords, 1 Rewrite suggestion. Be concise."
                             if ai.client:
-                                response = ai.client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
+                                response = ai.client.models.generate_content(model='gemini-2.0-flash-lite-preview-02-05', contents=prompt)
                                 st.session_state['coach_feedback'] = response.text
                                 st.rerun()
                     except Exception as e: st.error(f"Error: {e}")
@@ -257,7 +257,7 @@ def main_app():
                         ai = AIService(st.session_state['gemini_key'])
                         if ai.client:
                             prompt = f"The user has a match score of {score}%. Missing keywords: {res['missing_keywords']}. Give 3 specific sentences they can add to their resume to fix this."
-                            resp = ai.client.models.generate_content(model='gemini-1.5-flash', contents=prompt)
+                            resp = ai.client.models.generate_content(model='gemini-2.0-flash-lite-preview-02-05', contents=prompt)
                             st.write(resp.text)
 
     # === TAB 3: COVER LETTER ===
